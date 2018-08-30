@@ -3,7 +3,10 @@ services:
   consul_1:
     build: consul/
     hostname: consul
-    command: agent -server -bootstrap-expect 1 -config-dir /consul/conf.d 
+    command: agent -server -bootstrap-expect 1 -config-dir /consul/conf.d
+    networks:
+      vpcbr:
+        ipv4_address: 10.5.0.8
     ports:
         - "8500:8500"
     volumes:
@@ -15,12 +18,18 @@ services:
         - "consul_1"
     hostname: consul2
     command: agent -server -join consul_1 -config-dir /consul/conf.d
+    networks:
+      vpcbr:
+        ipv4_address: 10.5.0.9
     volumes:
       - ./volumes/consul/conf.d:/consul/conf.d
       - ./volumes/consul/data2:/consul/data
   consul_3:
     build: consul/
     command: agent -server -join consul_1 -config-dir /consul/conf.d
+    networks:
+      vpcbr:
+        ipv4_address: 10.5.0.10
     depends_on:
         - "consul_1"
         - "consul_2"
@@ -35,6 +44,9 @@ services:
     ports:
       - "8200:8200"
     command: server -config=/vault/conf.d/vault.hcl
+    networks:
+      vpcbr:
+        ipv4_address: 10.5.0.11
     depends_on:
       - "consul_1"
       - "consul_2"
@@ -43,4 +55,12 @@ services:
       - VAULT_ADDR=http://127.0.0.1:8200
     volumes:
       - ./volumes/vault/conf.d:/vault/conf.d
+
+networks:
+  vpcbr:
+    driver: bridge
+    ipam:
+     config:
+       - subnet: 10.5.0.0/16
+         gateway: 10.5.0.1
 
